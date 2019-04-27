@@ -5,13 +5,13 @@
 #
 
 # @returns string Whitespace-separated list of all Docker Containers
-dck__getDockerContainerAll() {
+function dck__getDockerContainerAll() {
 	# get last word (delimiter is whitespace)
 	docker container ls -a | grep -v "^CONTAINER" | sed 's/.* //'
 }
 
 # @returns string Whitespace-separated list with running Docker Containers only
-dck__getDockerContainerRunning() {
+function dck__getDockerContainerRunning() {
 	# get last word (delimiter is whitespace)
 	docker container ls | grep -v "^CONTAINER" | sed 's/.* //'
 }
@@ -19,7 +19,7 @@ dck__getDockerContainerRunning() {
 # @param string $1 Docker Container name
 #
 # @returns int If Docker Container exists 0, otherwise 1
-dck_getDoesDockerContainerAlreadyExist() {
+function dck_getDoesDockerContainerAlreadyExist() {
 	for TMP_DFNCS_DCONT in `dck__getDockerContainerAll`; do
 		if [ "$TMP_DFNCS_DCONT" = "$1" ]; then
 			return 0
@@ -31,7 +31,7 @@ dck_getDoesDockerContainerAlreadyExist() {
 # @param string $1 Docker Container name
 #
 # @returns int If Docker Container is running 0, otherwise 1
-dck_getDoesDockerContainerIsRunning() {
+function dck_getDoesDockerContainerIsRunning() {
 	for TMP_DFNCS_DCONT in `dck__getDockerContainerRunning`; do
 		if [ "$TMP_DFNCS_DCONT" = "$1" ]; then
 			return 0
@@ -44,10 +44,11 @@ dck_getDoesDockerContainerIsRunning() {
 # @param string $2 optional: Docker Image version
 #
 # @returns int If Docker Image exists 0, otherwise 1
-dck_getDoesDockerImageExist() {
+function dck_getDoesDockerImageExist() {
 	local TMP_DFNCS_SEARCH="$1"
 	[ -n "$2" ] && TMP_DFNCS_SEARCH="$TMP_DFNCS_SEARCH:$2"
-	local TMP_IMGID="$(docker image ls "$TMP_DFNCS_SEARCH" | awk '/^'$1' / { print $3 }')"
+	local TMP_AWK="$(echo -n "$1" | sed -e 's/\//\\\//g')"
+	local TMP_IMGID="$(docker image ls "$TMP_DFNCS_SEARCH" | awk '/^'$TMP_AWK' / { print $3 }')"
 	[ -n "$TMP_IMGID" ] && return 0 || return 1
 }
 
@@ -57,10 +58,11 @@ dck_getDoesDockerImageExist() {
 # @param string $2 optional: Docker Image version
 #
 # @returns void
-dck_getDockerImageId() {
+function dck_getDockerImageId() {
 	local TMP_DFNCS_SEARCH="$1"
 	[ -n "$2" ] && TMP_DFNCS_SEARCH="$TMP_DFNCS_SEARCH:$2"
-	local TMP_IMGID="$(docker image ls "$TMP_DFNCS_SEARCH" | awk '/^'$1' / { print $3 }')"
+	local TMP_AWK="$(echo -n "$1" | sed -e 's/\//\\\//g')"
+	local TMP_IMGID="$(docker image ls "$TMP_DFNCS_SEARCH" | awk '/^'$TMP_AWK' / { print $3 }')"
 	echo -n "$TMP_IMGID"
 }
 
@@ -68,7 +70,7 @@ dck_getDockerImageId() {
 # @param string $2 optional: Docker Image version
 #
 # @returns int If Docker Image could be removed 0, if Docker Image did not exist 1, otherwise 2
-dck_removeDockerImage() {
+function dck_removeDockerImage() {
 	local TMP_IMGID="$(dck_getDockerImageId "$1" "$2")"
 	if [ -n "$TMP_IMGID" ]; then
 		local TMP_WC="$(docker image ls | grep " $TMP_IMGID " | wc -l)"
