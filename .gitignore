@@ -1,0 +1,12 @@
+# macOS: Finder
+.DS_Store
+# linux: Dolphin
+.directory
+
+# Netbeans:
+nbproject/
+# IntelliJ IDEA:
+.idea/
+
+files/src-mkinstall/build-temp/
+files/src-mkinstall/build-output/

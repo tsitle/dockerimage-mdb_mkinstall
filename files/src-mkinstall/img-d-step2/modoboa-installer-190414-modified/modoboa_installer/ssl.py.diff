@@ -1,0 +1,31 @@
+--- ssl.py--ORG	2019-04-25 15:38:57.000000000 +0200
++++ ssl.py	2019-04-25 16:18:48.000000000 +0200
+@@ -45,17 +45,17 @@
+ 
+     def generate_cert(self):
+         """Create a certificate."""
+-        if not self.overwrite_existing_certificate():
+-            return
+-        utils.printcolor(
+-            "Generating new self-signed certificate", utils.YELLOW)
+-        utils.exec_cmd(
+-            "openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 "
+-            "-subj '/CN={}' -keyout {} -out {}".format(
+-                self.config.get("general", "hostname"),
+-                self.config.get("general", "tls_key_file"),
+-                self.config.get("general", "tls_cert_file"))
+-        )
++        #if not self.overwrite_existing_certificate():
++        #    return
++        #utils.printcolor(
++        #    "Generating new self-signed certificate", utils.YELLOW)
++        #utils.exec_cmd(
++        #    "openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 "
++        #    "-subj '/CN={}' -keyout {} -out {}".format(
++        #        self.config.get("general", "hostname"),
++        #        self.config.get("general", "tls_key_file"),
++        #        self.config.get("general", "tls_cert_file"))
++        #)
+ 
+ 
+ class LetsEncryptCertificate(CertificateBackend):

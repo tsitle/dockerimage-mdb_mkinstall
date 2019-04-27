@@ -1,0 +1,84 @@
+--- config.tpl--ORG	2019-04-14 09:18:03.000000000 +0200
++++ config.tpl	2019-04-20 08:44:01.000000000 +0200
+@@ -15,10 +15,10 @@
+ # IPv4 syntax: address:port
+ # IPv6 syntax: [address]:port
+ # For example: 0.0.0.0:9999, [::]:9999
+-#hosts = 127.0.0.1:5232
++hosts = 0.0.0.0:5232
+ 
+ # Daemon flag
+-#daemon = False
++daemon = False
+ 
+ # File storing the PID in daemon mode
+ #pid =
+@@ -52,7 +52,7 @@
+ #ciphers =
+ 
+ # Reverse DNS to resolve client address in logs
+-#dns_lookup = True
++dns_lookup = False
+ 
+ # Message displayed in the client when a password is needed
+ #realm = Radicale - Password Required
+@@ -71,7 +71,7 @@
+ 
+ # Authentication method
+ # Value: none | htpasswd | remote_user | http_x_remote_user
+-type = radicale_dovecot_auth 
++type = radicale_dovecot_auth
+ 
+ # Htpasswd filename
+ # htpasswd_filename = users
+@@ -83,7 +83,7 @@
+ # htpasswd_encryption = plain 
+ 
+ # Incorrect authentication delay (seconds)
+-#delay = 1
++delay = 3
+ 
+ auth_socket = %{auth_socket_path}
+ 
+@@ -92,10 +92,10 @@
+ 
+ # Rights backend
+ # Value: none | authenticated | owner_only | owner_write | from_file
+-type = from_file 
++type = from_file
+ 
+ # File for rights management from_file
+-file = %{config_dir}/rights
++file = %{config_dir}/modo_rights/rights
+ 
+ 
+ [storage]
+@@ -134,7 +134,7 @@
+ 
+ # Web interface backend
+ # Value: none | internal
+-type = none 
++type = none
+ 
+ 
+ [logging]
+@@ -144,15 +144,16 @@
+ # For more information about the syntax of the configuration file, see:
+ # http://docs.python.org/library/logging.config.html
+ #config = /etc/radicale/logging
++config = /etc/radicale/log.conf
+ 
+ # Set the default logging level to debug
+-debug = False 
++debug = False
+ 
+ # Store all environment variables (including those set in the shell)
+-#full_environment = False
++full_environment = False
+ 
+ # Don't include passwords in logs
+-#mask_passwords = True
++mask_passwords = True
+ 
+ 
+ [headers]

@@ -1,0 +1,15 @@
+{
+	"admin": {
+		"handle_mailboxes": true,
+		"account_auto_removal": true
+	},
+	"modoboa_amavis": {
+		"am_pdp_mode": "inet"
+	},
+	"modoboa_pdfcredentials": {
+		"storage_dir": "/srv/modoboa/pdfcredentials"
+	},
+	"modoboa_stats": {
+		"rrd_rootdir": "/srv/modoboa/rrdfiles"
+	}
+}

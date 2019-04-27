@@ -1,0 +1,141 @@
+--- database.py--ORG	2019-04-14 09:18:03.000000000 +0200
++++ database.py	2019-04-14 12:38:09.000000000 +0200
+@@ -22,6 +22,7 @@
+         self.config = config
+         engine = self.config.get("database", "engine")
+         self.dbhost = self.config.get("database", "host")
++        self.dbport = self.config.get("database", "port")
+         self.dbuser = config.get(engine, "user")
+         self.dbpassword = config.get(engine, "password")
+         if self.config.getboolean("database", "install"):
+@@ -143,59 +144,63 @@
+ 
+     def install_package(self):
+         """Preseed package installation."""
+-        name, version, _id = platform.linux_distribution()
+-        name = name.lower()
+-        if name == "debian":
+-            mysql_name = "mysql" if version.startswith("8") else "mariadb"
+-            self.packages["deb"].append("lib{}client-dev".format(mysql_name))
+-        elif name == "ubuntu":
+-            self.packages["deb"].append("libmysqlclient-dev")
+-        super(MySQL, self).install_package()
+-        if name == "debian" and version.startswith("8"):
+-            package.backend.preconfigure(
+-                "mariadb-server", "root_password", "password",
+-                self.dbpassword)
+-            package.backend.preconfigure(
+-                "mariadb-server", "root_password_again", "password",
+-                self.dbpassword)
+-        else:
+-            queries = [
+-                "UPDATE user SET plugin='' WHERE user='root'",
+-                "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
+-                .format(self.dbpassword),
+-                "flush privileges"
+-            ]
+-            for query in queries:
+-                utils.exec_cmd(
+-                    "mysql -D mysql -e '{}'".format(self._escape(query)))
++        # all packages should already have been installed by the Docker Image Buildtool
++        #name, version, _id = platform.linux_distribution()
++        #name = name.lower()
++        #if name == "debian":
++        #    mysql_name = "mysql" if version.startswith("8") else "mariadb"
++        #    self.packages["deb"].append("lib{}client-dev".format(mysql_name))
++        #elif name == "ubuntu":
++        #    self.packages["deb"].append("libmysqlclient-dev")
++        #super(MySQL, self).install_package()
++        #if name == "debian" and version.startswith("8"):
++        #    package.backend.preconfigure(
++        #        "mariadb-server", "root_password", "password",
++        #        self.dbpassword)
++        #    package.backend.preconfigure(
++        #        "mariadb-server", "root_password_again", "password",
++        #        self.dbpassword)
++        #else:
++        #    queries = [
++        #        "UPDATE user SET plugin='' WHERE user='root'",
++        #        "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
++        #        .format(self.dbpassword),
++        #        "flush privileges"
++        #    ]
++        #    for query in queries:
++        #        utils.exec_cmd(
++        #            "mysql -D mysql -e '{}'".format(self._escape(query)))
+ 
+     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
+         """Exec a mysql query."""
+         if dbuser is None and dbpassword is None:
+             dbuser = self.dbuser
+             dbpassword = self.dbpassword
+-        cmd = "mysql -h {} -u {}".format(self.dbhost, dbuser)
++        cmd = "mysql -h {} --port={} --protocol tcp -u {}".format(self.dbhost, self.dbport, dbuser)
+         if dbpassword:
+             cmd += " -p{}".format(dbpassword)
+         if dbname:
+             cmd += " -D {}".format(dbname)
++        utils.printcolor(
++            "** query cmd '{}".format(cmd) + " -e {}' ".format(self._escape(query)), utils.BLUE)
+         utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
+ 
+     def create_user(self, name, password):
+         """Create a user."""
+-        self._exec_query(
+-            "CREATE USER '{}'@'%' IDENTIFIED BY '{}'".format(
+-                name, password))
+-        self._exec_query(
+-            "CREATE USER '{}'@'localhost' IDENTIFIED BY '{}'".format(
+-                name, password))
++        # the users should already have been created by the Docker Image Buildtool
++        #self._exec_query(
++        #    "CREATE USER '{}'@'%' IDENTIFIED BY '{}'".format(
++        #        name, password))
++        #self._exec_query(
++        #    "CREATE USER '{}'@'localhost' IDENTIFIED BY '{}'".format(
++        #        name, password))
+ 
+     def create_database(self, name, owner):
+         """Create a database."""
+         self._exec_query(
+-            "CREATE DATABASE IF NOT EXISTS {} "
+-            "DEFAULT CHARACTER SET {} "
+-            "DEFAULT COLLATE {}".format(
++            "CREATE DATABASE IF NOT EXISTS `{}` "
++            "DEFAULT CHARACTER SET '{}' "
++            "DEFAULT COLLATE '{}'".format(
+                 name, self.config.get("mysql", "charset"),
+                 self.config.get("mysql", "collation"))
+         )
+@@ -203,12 +208,14 @@
+ 
+     def grant_access(self, dbname, user):
+         """Grant access to dbname."""
+-        self._exec_query(
+-            "GRANT ALL PRIVILEGES ON {}.* to '{}'@'%'"
+-            .format(dbname, user))
+-        self._exec_query(
+-            "GRANT ALL PRIVILEGES ON {}.* to '{}'@'localhost'"
+-            .format(dbname, user))
++        # the modoboa installer DB user does not have the necessary priviledges for GRANT
++        # which is why the GRANTs should already have been made by the Docker Image Buildtool
++        #self._exec_query(
++        #    "GRANT ALL PRIVILEGES ON {}.* to '{}'@'%'"
++        #    .format(dbname, user))
++        #self._exec_query(
++        #    "GRANT ALL PRIVILEGES ON {}.* to '{}'@'localhost'"
++        #    .format(dbname, user))
+ 
+     def grant_right_on_table(self, dbname, table, user, right):
+         """Grant specific right to user on table."""
+@@ -219,8 +226,8 @@
+     def load_sql_file(self, dbname, dbuser, dbpassword, path):
+         """Load SQL file."""
+         utils.exec_cmd(
+-            "mysql -h {} -u {} -p{} {} < {}".format(
+-                self.dbhost, dbuser, dbpassword, dbname, path)
++            "mysql -h {} --port={} --protocol tcp -u {} -p{} {} < {}".format(
++                self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
+         )
+ 
+ 

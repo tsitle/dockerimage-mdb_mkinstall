@@ -1,0 +1,20 @@
+--- clamav.py--ORG	2019-04-25 11:38:48.000000000 +0200
++++ clamav.py	2019-04-25 11:39:56.000000000 +0200
+@@ -67,10 +67,10 @@
+ EOM
+ """.format(path))
+ 
+-        if utils.dist_name() in ["debian", "ubuntu"]:
+-            # Stop freshclam daemon to allow manual download
+-            utils.exec_cmd("service clamav-freshclam stop")
+-            utils.exec_cmd("freshclam", sudo_user=user, login=False)
+-            utils.exec_cmd("service clamav-freshclam start")
+-        else:
+-            utils.exec_cmd("freshclam", sudo_user=user, login=False)
++        #if utils.dist_name() in ["debian", "ubuntu"]:
++        #    # Stop freshclam daemon to allow manual download
++        #    utils.exec_cmd("service clamav-freshclam stop")
++        #    utils.exec_cmd("freshclam", sudo_user=user, login=False)
++        #    utils.exec_cmd("service clamav-freshclam start")
++        #else:
++        #    utils.exec_cmd("freshclam", sudo_user=user, login=False)
