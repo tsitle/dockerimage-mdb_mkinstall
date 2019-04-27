@@ -25,9 +25,13 @@ The Docker Images **mdb-install**, **mdb-mariadb** and **mdb-nginx** will contai
 Note that the Docker Image **mdb-install** is not intended to be used directly as a Mailserver.  
 Instead, use **mdb-mklive** to generate a Docker Image with your custom settings.
 
+In order to use this Docker Image you should also get a copy of the Docker Container Repository **mdb-dc-mkinstall** (see below).
+
 ## Links
 ### GitHub
-- [mdb-mklive](https://github.com/tsitle/dockerimage-mdb_mklive "GitHub Repository for Docker Image mdb-mklive")
+- GitHub Repository for Docker Container [mdb-dc-mkinstall](https://github.com/tsitle/dockercontainer-mdb_dc_mkinstall)
+- GitHub Repository for Docker Image [mdb-mklive](https://github.com/tsitle/dockerimage-mdb_mklive)
+- GitHub Repository for Docker Container [mdb-dc-mklive](https://github.com/tsitle/dockercontainer-mdb_dc_mklive)
 
 ### Docker Hub
 - [mdb-mkinstall](https://hub.docker.com/r/tsle/mdb-mkinstall "Docker Hub Repository for Docker Image mdb-mkinstall")
