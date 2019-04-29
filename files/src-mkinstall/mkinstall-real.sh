@@ -62,6 +62,10 @@ mkinst_checkVars || exit 1
 
 # ----------------------------------------------------------
 
+mkinst_getCpuArch >/dev/null || exit 1
+
+# ----------------------------------------------------------
+
 function printUsageAndExit() {
 	echo "Usage: $VAR_MYNAME <COMMAND> [ARG]" >/dev/stderr
 	echo >/dev/stderr

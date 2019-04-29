@@ -4,6 +4,28 @@
 # by TS, Mar 2019
 #
 
+# Outputs CPU architecture string
+#
+# @return int EXITCODE
+function mkinst_getCpuArch() {
+	case "$(uname -m)" in
+		x86_64*)
+			echo -n "x86_64"
+			;;
+		aarch64)
+			echo -n "arm_64"
+			;;
+		armv7*)
+			echo -n "arm_32"
+			;;
+		*)
+			echo "$VAR_MYNAME: Error: Unknown CPU architecture '$(uname -m)'" >/dev/stderr
+			return 1
+			;;
+	esac
+	return 0
+}
+
 # Outputs string
 #
 # @param string $1 Input string
@@ -123,22 +145,16 @@ function mkinst_getDockerContainerNameStringForBuildTarget() {
 #
 # @return void
 function mkinst_getDockerImageNameAndVersionStringForBuildTarget() {
-	if [ "$1" = "$CFG_MKINST_DOCK_IMG_NGINX" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_NGINX_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_MARIADB" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_MARIADB_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_STEP1" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_STEP1_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_STEP2" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_STEP2_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_STEP3" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_STEP3_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_STEP4" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_STEP4_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_STEP5" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_STEP5_VERS"
-	elif [ "$1" = "$CFG_MKINST_DOCK_IMG_STEP6" ]; then
-		echo -n "$1:$CFG_MKINST_DOCK_IMG_STEP6_VERS"
+	local TMP_OUTP="${1}-$(mkinst_getCpuArch):${CFG_MKINST_DOCK_IMG_RELEASE_VERS}"
+	if [ "$1" = "$CFG_MKINST_DOCK_IMG_NGINX" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_MARIADB" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_STEP1" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_STEP2" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_STEP3" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_STEP4" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_STEP5" -o \
+			"$1" = "$CFG_MKINST_DOCK_IMG_STEP6" ]; then
+		echo -n "$TMP_OUTP"
 	else
 		echo -n ""
 	fi
