@@ -488,8 +488,6 @@ function mkinst_checkDbConnection() {
 	fi
 
 	#
-	echo -e "\n$VAR_MYNAME: Starting DB-Server ($VAR_DB_FNCS_DC_MARIADB)..."
-
 	if [ ! -d "$VAR_MYDIR/$CFG_MKINST_PATH_BUILDTEMP" ]; then
 		mkdir "$VAR_MYDIR/$CFG_MKINST_PATH_BUILDTEMP" || {
 			echo "$VAR_MYNAME: Error: Creating directory '$CFG_MKINST_PATH_BUILDTEMP' failed. Aborting." >/dev/stderr

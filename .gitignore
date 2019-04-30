@@ -10,5 +10,5 @@ nbproject/
 
 *.tmp
 
-files/src-mkinstall/build-temp/
-files/src-mkinstall/build-output/
+build-ctx/files/src-mkinstall/build-temp/
+build-ctx/files/src-mkinstall/build-output/

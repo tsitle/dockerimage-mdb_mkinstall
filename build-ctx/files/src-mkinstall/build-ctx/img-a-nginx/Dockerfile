@@ -58,8 +58,12 @@ COPY img-0-common/bash/dot_bashrc /root/.bashrc
 COPY img-a-nginx/files/nginx-vhosts/* /etc/nginx/sites-available/
 
 RUN \
+	# change server_names_hash_bucket_size
+		sed -i \
+				-e 's/# server_names_hash_bucket_size 64;/server_names_hash_bucket_size 64;/g' \
+				/etc/nginx/nginx.conf \
 	# remove default sites
-		rm -f /etc/nginx/sites-enabled/* \
+		&& rm -f /etc/nginx/sites-enabled/* \
 	# enable VHost site
 		&& chmod 644 /etc/nginx/sites-available/* \
 		&& chown root:root /etc/nginx/sites-available/* \

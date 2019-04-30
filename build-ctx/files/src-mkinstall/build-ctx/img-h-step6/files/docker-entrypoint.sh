@@ -32,6 +32,7 @@ function _dep_setOwnerAndPerms() {
 _dep_setOwnerAndPerms "/srv/modoboa/pdfcredentials/" modoboa modoboa "770"
 _dep_setOwnerAndPerms "/srv/modoboa/rrdfiles/" modoboa modoboa "770"
 _dep_setOwnerAndPerms "/srv/vmail/" vmail vmail "755"
+_dep_setOwnerAndPerms "/var/lib/clamav/" clamav clamav "755"
 _dep_setOwnerAndPerms "/var/log/apache2/modoboa/" root root "755"
 _dep_setOwnerAndPerms "/var/log/mail/" root root "755"
 _dep_setOwnerAndPerms "/var/log/radicale/" radicale radicale "755"

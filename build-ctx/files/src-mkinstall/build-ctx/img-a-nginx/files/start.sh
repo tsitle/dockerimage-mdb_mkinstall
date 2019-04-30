@@ -4,6 +4,20 @@
 # by TS, Apr 2019
 #
 
+# ----------------------------------------------------------------------
+# Volumes
+
+function _dep_setOwnerAndPerms() {
+	[ -d "$1" ] && {
+		chown $2:$3 "$1" && chmod "$4" "$1"
+	}
+}
+
+_dep_setOwnerAndPerms "/etc/ssl/host-certs" root root "755"
+_dep_setOwnerAndPerms "/etc/ssl/host-keys" root ssl-cert "750"
+
+# ----------------------------------------------------------------------
+
 # @param string $1 Input filename
 # @param string $2 Variable name
 # @param string $3 Value
