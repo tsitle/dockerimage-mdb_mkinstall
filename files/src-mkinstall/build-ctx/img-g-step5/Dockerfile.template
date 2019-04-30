@@ -1,0 +1,106 @@
+#
+#
+
+FROM <IMGNAME>:<IMGVERS>
+
+WORKDIR /root
+
+COPY "img-g-step5/files/modoboa-${CF_MODOBOA_VERSION}-*.patch" /root/
+
+# patch Modoboa
+RUN \
+	if [ -n "${CF_MODOBOA_VERSION}" ]; then \
+		cd /srv/modoboa/env/lib/python2.7/site-packages \
+		&& \
+			for TMP_PATCH_FN in /root/*.patch; do \
+				patch -p0 -b -z "-mdb_bckp" < "$TMP_PATCH_FN" || exit 1 \
+				; \
+				TMP_PY_FN="$(grep "^+++ " "$TMP_PATCH_FN" | cut -c5- | cut -f1)" \
+				&& \
+				[ -n "$TMP_PY_FN" -a -f "${TMP_PY_FN}c" ] && rm "${TMP_PY_FN}c" \
+				; \
+				rm "$TMP_PATCH_FN" \
+				; \
+			done \
+		; \
+	fi
+
+#
+RUN \
+	mkdir -p /etc/radicale/modo_rights /srv/radicale/collections \
+	&& \
+	chown -R radicale:radicale /etc/radicale /srv/radicale/collections \
+	&& \
+	chmod -R o= /etc/radicale /srv/radicale/collections \
+	&& \
+	test -d /var/lib/radicale/collections && rmdir /var/lib/radicale/collections \
+	; \
+	test -d /var/lib/radicale || { mkdir /var/lib/radicale; chown radicale:radicale /var/lib/radicale; } \
+	; \
+	ln -s /srv/radicale/collections /var/lib/radicale/collections
+
+RUN \
+	( test -d /var/log/mail || mkdir /var/log/mail ) \
+	&& chown root:root /var/log/mail \
+	&& chmod 755 /var/log/mail \
+	&& sed -i \
+		-e "s/\/var\/log\/mail.log/\/var\/log\/mail\/mail.log/g" \
+		-e "s/\/var\/log\/mail.err/\/var\/log\/mail\/mail.err/g" \
+		-e "s/\/var\/log\/mail.info/\/var\/log\/mail\/mail.info/g" \
+		-e "s/\/var\/log\/mail.warn/\/var\/log\/mail\/mail.warn/g" \
+		/etc/syslog.conf \
+		/etc/logrotate.d/inetutils-syslogd \
+	&& ln -fs /var/log/mail/mail.info /var/log/mail.info
+
+RUN \
+	sed -i \
+		-e "s/pop = yes/pop = no/g" \
+		-e "s/imap_port = 143/imap_port = 993/g" \
+		-e "s/imap_encryption = starttls/imap_encryption = ssl/g" \
+		/etc/automx.conf
+
+RUN \
+	sed -i \
+		-e "s/^#ssl = yes$/ssl = required/g" \
+		/etc/dovecot/conf.d/10-ssl.conf
+
+RUN \
+	sed -i \
+		-e "s/^ENABLED=0$/ENABLED=1/g" \
+		-e "s/^CRON=0$/CRON=1/g" \
+		/etc/default/spamassassin \
+	&& sed -i \
+		-e "s/^pyzor_path      \/usr\/bin\/pyzor$/pyzor_path      \/usr\/bin\/pyzor\npyzor_options --homedir \/etc\/spamassassin/g" \
+		/etc/spamassassin/local.cf
+
+RUN \
+	sed -i \
+		-e "s/###MAILHOSTNAME###/$CF_MAILHOSTNAME/g" \
+		-e "s/###MAILDOMAIN###/$CF_MAILDOMAIN/g" \
+		/etc/apache2/sites-available/000-common.conf \
+		/etc/apache2/sites-available/050-modoboa.conf \
+		/etc/apache2/sites-available/060-modoboa-automx.conf \
+	&& \
+	sed -i \
+		-e "s/###DAVHOSTNAME###/$CF_DAVHOSTNAME/g" \
+		-e "s/###MAILDOMAIN###/$CF_MAILDOMAIN/g" \
+		/etc/apache2/sites-available/070-radicale_reverse-ssl.conf \
+	&& \
+	( a2dissite 000-default || echo -n; ) \
+	&& \
+	a2ensite 000-common 050-modoboa 060-modoboa-automx 070-radicale_reverse-ssl \
+	&& ( \
+			test -f /etc/apache2/sites-available/000-default.conf \
+			&& mv /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/zz-default.conf \
+			|| echo -n ) \
+	&& ( \
+			test -f /etc/apache2/sites-available/default-ssl.conf \
+			&& mv /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/zz-default-ssl.conf \
+			|| echo -n ) \
+	&& ( test -d /etc/ssl/host-certs || mkdir /etc/ssl/host-certs ) \
+	&& ( test -d /etc/ssl/host-certs-internal || mkdir /etc/ssl/host-certs-internal ) \
+	&& ( test -d /etc/ssl/host-keys || mkdir /etc/ssl/host-keys ) \
+	&& ( test -d /etc/ssl/host-keys-internal || mkdir /etc/ssl/host-keys-internal ) \
+	&& chmod 755 /etc/ssl/host-certs /etc/ssl/host-certs-internal \
+	&& chmod 750 /etc/ssl/host-keys /etc/ssl/host-keys-internal \
+	&& chown root:ssl-cert /etc/ssl/host-keys /etc/ssl/host-keys-internal

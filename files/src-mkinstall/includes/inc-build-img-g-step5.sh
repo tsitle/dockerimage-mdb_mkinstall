@@ -6,7 +6,9 @@
 
 # @return int EXITCODE
 function buildTarget() {
-	cd "$(mkinst_getBuildPathForBuildTarget "$OPT_CMD_ARG1")" || return 1
+	local TMP_BUILDPATH_FOR_BT="$(mkinst_getBuildPathForBuildTarget "$OPT_CMD_ARG1")"
+
+	cd "$VAR_MYDIR/$CFG_MKINST_PATH_BUILDCTX/$TMP_BUILDPATH_FOR_BT" || return 1
 
 	#
 	local TMP_DI_PARENT="$(mkinst_getDockerImageNameAndVersionStringForBuildTargetParent "$OPT_CMD_ARG1")"
@@ -20,12 +22,18 @@ function buildTarget() {
 
 	echo -e "$VAR_MYNAME: Building Docker Image '$TMP_DI'...\n"
 
+	cd "$VAR_MYDIR/$CFG_MKINST_PATH_BUILDCTX" || return 1
+
 	docker build \
 			-t "$TMP_DI" \
-			-f Dockerfile.tmp \
+			-f "$TMP_BUILDPATH_FOR_BT/Dockerfile.tmp" \
 			.
 	local TMP_RES=$?
-	rm Dockerfile.tmp
 	[ $TMP_RES -ne 0 ] && echo "$VAR_MYNAME: Error: Failed. Aborting." >/dev/stderr
+
+	rm "$TMP_BUILDPATH_FOR_BT/Dockerfile.tmp"
+
+	cd "$VAR_MYDIR" || return 1
+
 	return $TMP_RES
 }

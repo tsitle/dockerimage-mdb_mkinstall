@@ -1,0 +1,233 @@
+#
+# + Modoboa Packages #2 (Modoboa itself, ClamAV)
+#
+
+FROM <IMGNAME>:<IMGVERS>
+
+WORKDIR /root
+
+# allow --build-arg ARG=VAL to be used as variable at build-time (COPY / RUN / ...)
+ARG CF_DAVHOSTNAME=dav
+ARG CF_MAILHOSTNAME=mail
+ARG CF_MAILDOMAIN=localdomain.local
+ARG CF_TIMEZONE=Europe/Berlin
+ARG CF_MARIADB_DOCKERHOST=mariadb-docker-cnt
+ARG CF_MODOBOA_VERSION=x.x.x
+ARG CF_MODOBOA_INSTALLER_VERSION=x.x.x
+ARG CF_MODOBOA_INSTALLER_DBPORT=3306
+ARG CF_MODOBOA_INSTALLER_DBUSER=docker_modo_installer_def
+ARG CF_MODOBOA_INSTALLER_DBPASS=abcd
+ARG CF_MODOBOA_CONF_DBNAME_AND_DBUSER=docker_buildmodo_def_modoboa
+ARG CF_MODOBOA_CONF_DBPASS=abcd
+ARG CF_AMAVIS_CONF_DBNAME_AND_DBUSER=docker_buildmodo_def_amavis
+ARG CF_AMAVIS_CONF_DBPASS=abcd
+ARG CF_SPAMASSASS_CONF_DBNAME_AND_DBUSER=docker_buildmodo_def_spamassassin
+ARG CF_SPAMASSASS_CONF_DBPASS=abcd
+ARG CF_CLAMAV_CONF_ENABLE=false
+ARG CF_MODOBOA_CSRF_PROTECTION_ENABLE=false
+ARG CF_OPENDKIM_CONF_ENABLE=false
+ARG CF_OPENDKIM_CONF_DBNAME_AND_DBUSER=docker_buildmodo_def_opendkim
+ARG CF_OPENDKIM_CONF_DBPASS=abcd
+
+# allow --build-arg ARG=VAL to be used as environment variable at runtime (ENTRYPOINT / Bash / ...)
+ENV CF_DAVHOSTNAME ${CF_DAVHOSTNAME}
+ENV CF_MAILHOSTNAME ${CF_MAILHOSTNAME}
+ENV CF_MAILDOMAIN ${CF_MAILDOMAIN}
+ENV CF_TIMEZONE ${CF_TIMEZONE}
+ENV CF_MARIADB_DOCKERHOST ${CF_MARIADB_DOCKERHOST}
+ENV CF_MODOBOA_VERSION ${CF_MODOBOA_VERSION}
+ENV CF_MODOBOA_INSTALLER_VERSION ${CF_MODOBOA_INSTALLER_VERSION}
+ENV CF_MODOBOA_INSTALLER_DBUSER ${CF_MODOBOA_INSTALLER_DBUSER}
+ENV CF_MODOBOA_INSTALLER_DBPASS ${CF_MODOBOA_INSTALLER_DBPASS}
+ENV CF_MODOBOA_CONF_DBNAME_AND_DBUSER ${CF_MODOBOA_CONF_DBNAME_AND_DBUSER}
+ENV CF_MODOBOA_CONF_DBPASS ${CF_MODOBOA_CONF_DBPASS}
+ENV CF_AMAVIS_CONF_DBNAME_AND_DBUSER ${CF_AMAVIS_CONF_DBNAME_AND_DBUSER}
+ENV CF_AMAVIS_CONF_DBPASS ${CF_AMAVIS_CONF_DBPASS}
+ENV CF_SPAMASSASS_CONF_DBNAME_AND_DBUSER ${CF_SPAMASSASS_CONF_DBNAME_AND_DBUSER}
+ENV CF_SPAMASSASS_CONF_DBPASS ${CF_SPAMASSASS_CONF_DBPASS}
+ENV CF_CLAMAV_CONF_ENABLE ${CF_CLAMAV_CONF_ENABLE}
+ENV CF_MODOBOA_CSRF_PROTECTION_ENABLE ${CF_MODOBOA_CSRF_PROTECTION_ENABLE}
+ENV CF_OPENDKIM_CONF_ENABLE ${CF_OPENDKIM_CONF_ENABLE}
+ENV CF_OPENDKIM_CONF_DBNAME_AND_DBUSER ${CF_OPENDKIM_CONF_DBNAME_AND_DBUSER}
+ENV CF_OPENDKIM_CONF_DBPASS ${CF_OPENDKIM_CONF_DBPASS}
+
+# ----------------------------------------------------
+# Sanity check
+RUN \
+	test \
+		-n "$CF_MAILDOMAIN" -a \
+		-n "$CF_MAILHOSTNAME" -a \
+		-n "$CF_DAVHOSTNAME" -a \
+		"$CF_MAILHOSTNAME" != "$CF_DAVHOSTNAME"
+
+# ----------------------------------------------------
+# Install ClamAV
+
+RUN \
+	[ "$CF_CLAMAV_CONF_ENABLE" = "true" ] \
+		&& \
+		{ \
+			apt-get update \
+			&& \
+			DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+				clamav-daemon || exit 1; \
+			sed -i \
+				-e "s/^# Check for new database 24 times a day/# Check for new database once per day/g" \
+				-e "s/^Checks 24$/Checks 1/g" \
+				/etc/clamav/freshclam.conf || exit 1; \
+		} \
+		|| true  # to prevent RETVAL!=0
+
+# ----------------------------------------------------
+# Install OpenDKIM
+
+RUN \
+	[ "$CF_OPENDKIM_CONF_ENABLE" = "true" ] \
+		&& \
+		{ \
+			apt-get update \
+			&& \
+			DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+				libopendbx1-mysql opendkim || exit 1; \
+		} \
+		|| true  # to prevent RETVAL!=0
+
+# ----------------------------------------------------
+
+# copy files to image
+COPY "img-d-step2/files/docker-entrypoint.sh" /usr/local/bin/
+COPY \
+	"img-d-step2/files/apache-conf/050-modoboa.conf" \
+	"img-d-step2/files/apache-conf/060-modoboa-automx.conf" \
+	"img-d-step2/files/apache-conf/070-radicale_reverse-ssl.conf" \
+	"img-d-step2/files/apache-conf/000-common.conf" \
+	/etc/apache2/sites-available/
+#COPY "img-d-step2/files/radicale-conf/users" /etc/radicale/
+COPY "img-d-step2/files/radicale-conf/log.conf" /etc/radicale/
+COPY "img-d-step2/files/radicale-conf/initd-radicale" /etc/init.d/radicale
+#COPY "img-d-step2/files/radicale-wsgi/radicale.wsgi.py" /var/lib/radicale/
+
+RUN \
+	chmod 755 /usr/local/bin/docker-entrypoint.sh \
+	&& \
+	chmod 755 /etc/radicale \
+	&& \
+	chmod 644 /etc/radicale/* \
+	&& \
+	chown root:root -R \
+			/usr/local/bin/docker-entrypoint.sh \
+			/etc/apache2/sites-available/* \
+			/etc/radicale/ \
+			/etc/init.d/radicale
+
+# extract archive to WORKDIR in image
+ADD "img-d-step2/modoboa-installer-${CF_MODOBOA_INSTALLER_VERSION}-modified.tgz" .
+
+# configure Modoboa Installer
+RUN \
+	cd "modoboa-installer-${CF_MODOBOA_INSTALLER_VERSION}-modified" \
+	&& \
+	[ \
+			-n "$CF_MARIADB_DOCKERHOST" \
+		] \
+	&& \
+	sed -i \
+		-e "s/###MARIADB_DOCKERHOST###/$CF_MARIADB_DOCKERHOST/g" \
+		installer.cfg
+
+# configure Modoboa Installer
+RUN \
+	cd "modoboa-installer-${CF_MODOBOA_INSTALLER_VERSION}-modified" \
+	&& \
+	[ \
+			-n "$CF_TIMEZONE" -a \
+			-n "$CF_MAILDOMAIN" -a \
+			-n "$CF_MAILHOSTNAME" \
+		] \
+	&& \
+	sed -i \
+		-e "s/###TIMEZONE###/$(echo -n "$CF_TIMEZONE" | sed -e 's/\//\\\//g')/g" \
+		-e "s/###MAILHOSTNAME###/$CF_MAILHOSTNAME/g" \
+		-e "s/###MAILDOMAIN###/$CF_MAILDOMAIN/g" \
+		installer.cfg
+
+# configure Modoboa Installer
+RUN \
+	cd "modoboa-installer-${CF_MODOBOA_INSTALLER_VERSION}-modified" \
+	&& \
+	[ \
+			-n "$CF_MODOBOA_INSTALLER_DBPORT" -a \
+			-n "$CF_MODOBOA_INSTALLER_DBUSER" -a \
+			-n "$CF_MODOBOA_INSTALLER_DBPASS" -a \
+			-n "$CF_MODOBOA_CONF_DBNAME_AND_DBUSER" -a \
+			-n "$CF_MODOBOA_CONF_DBPASS" -a \
+			-n "$CF_AMAVIS_CONF_DBNAME_AND_DBUSER" -a \
+			-n "$CF_AMAVIS_CONF_DBPASS" -a \
+			-n "$CF_SPAMASSASS_CONF_DBNAME_AND_DBUSER" -a \
+			-n "$CF_SPAMASSASS_CONF_DBPASS" \
+		] \
+	&& \
+	sed -i \
+		-e "s/###MODOBOA_INSTALLER_DBPORT###/$CF_MODOBOA_INSTALLER_DBPORT/g" \
+		-e "s/###MODOBOA_INSTALLER_DBUSER###/$CF_MODOBOA_INSTALLER_DBUSER/g" \
+		-e "s/###MODOBOA_INSTALLER_DBPASS###/$CF_MODOBOA_INSTALLER_DBPASS/g" \
+		-e "s/###MODOBOA_CONF_DBNAME_AND_DBUSER###/$CF_MODOBOA_CONF_DBNAME_AND_DBUSER/g" \
+		-e "s/###MODOBOA_CONF_DBNAME_AND_DBUSER###/$CF_MODOBOA_CONF_DBNAME_AND_DBUSER/g" \
+		-e "s/###MODOBOA_CONF_DBPASS###/$CF_MODOBOA_CONF_DBPASS/g" \
+		-e "s/###AMAVIS_CONF_DBNAME_AND_DBUSER###/$CF_AMAVIS_CONF_DBNAME_AND_DBUSER/g" \
+		-e "s/###AMAVIS_CONF_DBPASS###/$CF_AMAVIS_CONF_DBPASS/g" \
+		-e "s/###SPAMASSASS_CONF_DBNAME_AND_DBUSER###/$CF_SPAMASSASS_CONF_DBNAME_AND_DBUSER/g" \
+		-e "s/###SPAMASSASS_CONF_DBPASS###/$CF_SPAMASSASS_CONF_DBPASS/g" \
+		installer.cfg
+
+# configure Modoboa Installer
+RUN \
+	cd "modoboa-installer-${CF_MODOBOA_INSTALLER_VERSION}-modified" \
+	&& \
+	[ \
+			"$CF_CLAMAV_CONF_ENABLE" = "true" -o \
+			"$CF_CLAMAV_CONF_ENABLE" = "false" \
+		] \
+	&& \
+	sed -i \
+		-e "s/###CLAMAV_CONF_ENABLE###/$CF_CLAMAV_CONF_ENABLE/g" \
+		installer.cfg
+
+# configure Modoboa Installer
+RUN \
+	cd "modoboa-installer-${CF_MODOBOA_INSTALLER_VERSION}-modified" \
+	&& \
+	[ \
+			"$CF_OPENDKIM_CONF_ENABLE" = "true" -o \
+			"$CF_OPENDKIM_CONF_ENABLE" = "false" \
+		] \
+	&& \
+	sed -i \
+		-e "s/###OPENDKIM_CONF_ENABLE###/$CF_OPENDKIM_CONF_ENABLE/g" \
+		-e "s/###OPENDKIM_CONF_DBNAME_AND_DBUSER###/$CF_OPENDKIM_CONF_DBNAME_AND_DBUSER/g" \
+		-e "s/###OPENDKIM_CONF_DBPASS###/$CF_OPENDKIM_CONF_DBPASS/g" \
+		installer.cfg
+
+# save current settings to cache file
+RUN \
+	echo "# settings cache for /root/mdb_update.sh" > "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_ENABLE_MODOBOA_CSRF=$CF_MODOBOA_CSRF_PROTECTION_ENABLE" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_MARIADB_DOCKERHOST='$CF_MARIADB_DOCKERHOST'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_MODO_USER='$CF_MODOBOA_CONF_DBNAME_AND_DBUSER'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_MODO_PASS='$CF_MODOBOA_CONF_DBPASS'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_AMAV_USER='$CF_AMAVIS_CONF_DBNAME_AND_DBUSER'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_AMAV_PASS='$CF_AMAVIS_CONF_DBPASS'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_SPAM_USER='$CF_SPAMASSASS_CONF_DBNAME_AND_DBUSER'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_SPAM_PASS='$CF_SPAMASSASS_CONF_DBPASS'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_OPENDKIM_CONF_ENABLE=$CF_OPENDKIM_CONF_ENABLE" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_DKIM_USER='$CF_OPENDKIM_CONF_DBNAME_AND_DBUSER'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DB_DKIM_PASS='$CF_OPENDKIM_CONF_DBPASS'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_DAVHOSTNAME='$CF_DAVHOSTNAME'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_MAILHOSTNAME='$CF_MAILHOSTNAME'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_MAILDOMAIN='$CF_MAILDOMAIN'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_TIMEZONE='$CF_TIMEZONE'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	echo "SETTS_CACHE_CLAMAV_CONF_ENABLE='$CF_CLAMAV_CONF_ENABLE'" >> "/usr/local/etc/mdb-settings-cache.sh"; \
+	chmod 600 "/usr/local/etc/mdb-settings-cache.sh"
+
+#
+ENTRYPOINT ["docker-entrypoint.sh"]

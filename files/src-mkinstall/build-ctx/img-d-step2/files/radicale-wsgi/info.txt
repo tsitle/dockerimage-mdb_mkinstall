@@ -1,0 +1,5 @@
+For using Apache + WSGI for Radicale we would need
+the Debian package 'libapache2-mod-wsgi-py3' instead of
+'libapache2-mod-wsgi'.
+But the Modoboa webinterface requires Python 2 so we cannot use
+the WSGI Python 3 module.

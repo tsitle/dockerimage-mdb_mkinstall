@@ -13,6 +13,8 @@ CFG_MKINST_PATH_BUILDTEMP="build-temp"
 
 CFG_MKINST_PATH_BUILDOUTPUT="build-output"
 
+CFG_MKINST_PATH_BUILDCTX="build-ctx"
+
 # ----------------------------------------------------------
 
 # for the building process only:

@@ -1,0 +1,19 @@
+{
+	"admin": {
+		"handle_mailboxes": true,
+		"account_auto_removal": true
+	},
+	"modoboa_amavis": {
+		"am_pdp_mode": "inet"
+	},
+	"modoboa_pdfcredentials": {
+		"storage_dir": "/srv/modoboa/pdfcredentials"
+	},
+	"modoboa_radicale": {
+		"rights_file_path": "/etc/radicale/rights",
+		"server_location": "https://modomail.ZTQ5Vsrdqv5VnZ8xpGvSXTafH5VfV7e2M9b.local/radicale/"
+	},
+	"modoboa_stats": {
+		"rrd_rootdir": "/srv/modoboa/rrdfiles"
+	}
+}

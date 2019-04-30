@@ -8,5 +8,7 @@ nbproject/
 # IntelliJ IDEA:
 .idea/
 
+*.tmp
+
 files/src-mkinstall/build-temp/
 files/src-mkinstall/build-output/

@@ -6,17 +6,33 @@
 
 # Outputs CPU architecture string
 #
+# @param string $1 debian_rootfs|debian_dist
+#
 # @return int EXITCODE
 function mkinst_getCpuArch() {
 	case "$(uname -m)" in
 		x86_64*)
-			echo -n "x86_64"
+			echo -n "amd64"
 			;;
-		aarch64)
-			echo -n "arm_64"
+		aarch64*)
+			if [ "$1" = "debian_rootfs" ]; then
+				echo -n "arm64v8"
+			elif [ "$1" = "debian_dist" ]; then
+				echo -n "arm64"
+			else
+				echo "$VAR_MYNAME: Error: invalid arg '$1'" >/dev/stderr
+				return 1
+			fi
 			;;
 		armv7*)
-			echo -n "arm_32"
+			if [ "$1" = "debian_rootfs" ]; then
+				echo -n "arm32v7"
+			elif [ "$1" = "debian_dist" ]; then
+				echo -n "armhf"
+			else
+				echo "$VAR_MYNAME: Error: invalid arg '$1'" >/dev/stderr
+				return 1
+			fi
 			;;
 		*)
 			echo "$VAR_MYNAME: Error: Unknown CPU architecture '$(uname -m)'" >/dev/stderr
@@ -96,6 +112,7 @@ function mkinst_checkVars() {
 
 	mkinst_checkVars_isEmpty "CFG_MKINST_PATH_BUILDTEMP" && return 1
 	mkinst_checkVars_isEmpty "CFG_MKINST_PATH_BUILDOUTPUT" && return 1
+	mkinst_checkVars_isEmpty "CFG_MKINST_PATH_BUILDCTX" && return 1
 
 	mkinst_checkVars_isEmpty "CFG_MKINST_DOCK_NET_NAME" && return 1
 	echo -n "$CFG_MKINST_DOCK_NET_PREFIX" | grep -q -E "^([0-9]{1,3}[\.]){2}[0-9]{1,3}$" || {
@@ -145,7 +162,7 @@ function mkinst_getDockerContainerNameStringForBuildTarget() {
 #
 # @return void
 function mkinst_getDockerImageNameAndVersionStringForBuildTarget() {
-	local TMP_OUTP="${1}-$(mkinst_getCpuArch):${CFG_MKINST_DOCK_IMG_RELEASE_VERS}"
+	local TMP_OUTP="${1}-$(mkinst_getCpuArch debian_dist):${CFG_MKINST_DOCK_IMG_RELEASE_VERS}"
 	if [ "$1" = "$CFG_MKINST_DOCK_IMG_NGINX" -o \
 			"$1" = "$CFG_MKINST_DOCK_IMG_MARIADB" -o \
 			"$1" = "$CFG_MKINST_DOCK_IMG_STEP1" -o \

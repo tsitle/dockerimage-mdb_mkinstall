@@ -62,7 +62,7 @@ mkinst_checkVars || exit 1
 
 # ----------------------------------------------------------
 
-mkinst_getCpuArch >/dev/null || exit 1
+mkinst_getCpuArch debian_dist >/dev/null || exit 1
 
 # ----------------------------------------------------------
 

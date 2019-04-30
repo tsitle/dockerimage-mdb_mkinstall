@@ -1,0 +1,58 @@
+
+##
+# You should look at the following URL's in order to grasp a solid understanding
+# of Nginx configuration files in order to fully unleash the power of Nginx.
+# https://www.nginx.com/resources/wiki/start/
+# https://www.nginx.com/resources/wiki/start/topics/tutorials/config_pitfalls/
+# https://wiki.debian.org/Nginx/DirectoryStructure
+#
+# Please see /usr/share/doc/nginx-doc/examples/ for more detailed examples.
+##
+
+server {
+	listen 443;
+
+	# set $cstm_proxy_server_vhost <CF_MAILHOSTNAME>.<CF_MAILDOMAIN>;
+	# set $cstm_dest_server_addr <CF_DEST_SERVER_ADDR>;
+	# set $cstm_dest_server_port <CF_DEST_SERVER_HTTP_PORT>;
+	# set $cstm_dest_server_vhost <CF_MAILHOSTNAME>.<CF_MAILDOMAIN>;
+
+	server_name <CF_MAILHOSTNAME>.<CF_MAILDOMAIN>;
+
+	client_max_body_size 100M;
+
+	ssl_certificate /etc/ssl/host-certs/client-<CF_MAILHOSTNAME>.<CF_MAILDOMAIN>.crt;
+	ssl_certificate_key /etc/ssl/host-keys/private-<CF_MAILHOSTNAME>.<CF_MAILDOMAIN>.key;
+
+	ssl on;
+	ssl_session_cache builtin:1000 shared:SSL:10m;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers HIGH:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4;
+	ssl_prefer_server_ciphers on;
+
+	access_log /var/log/nginx/access.log;
+	error_log /var/log/nginx/error.log;
+
+	location / {
+		proxy_set_header Host <CF_MAILHOSTNAME>.<CF_MAILDOMAIN>;
+		#proxy_set_header Host $host;
+
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		# proxy_pass:
+		#   put destination server here
+		# Fix the “It appears that your reverse proxy set up is broken" error.
+		proxy_pass http://<CF_DEST_SERVER_ADDR>:<CF_DEST_SERVER_HTTP_PORT>/;
+		proxy_read_timeout 90;
+
+		# proxy_redirect:
+		#   Sets the text that should be changed in the “Location” and “Refresh” header fields
+		#   of a proxied server response. Suppose a proxied server returned the header
+		#   field “Location: http://localhost:8000/two/some/uri/”. The directive
+		#     proxy_redirect http://localhost:8000/two/ http://frontend/one/;
+		#   will rewrite this string to “Location: http://frontend/one/some/uri/”.
+		proxy_redirect http://<CF_DEST_SERVER_ADDR>:<CF_DEST_SERVER_HTTP_PORT>/ https://<CF_MAILHOSTNAME>.<CF_MAILDOMAIN>/;
+	}
+}

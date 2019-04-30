@@ -67,7 +67,9 @@ function buildTarget() {
 	fi
 
 	# ------------------------
-	cd "$(mkinst_getBuildPathForBuildTarget "$OPT_CMD_ARG1")" || return 1
+	local TMP_BUILDPATH_FOR_BT="$(mkinst_getBuildPathForBuildTarget "$OPT_CMD_ARG1")"
+
+	cd "$VAR_MYDIR/$CFG_MKINST_PATH_BUILDCTX/$TMP_BUILDPATH_FOR_BT" || return 1
 
 	local TMP_DI="$(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$OPT_CMD_ARG1")"
 
@@ -90,6 +92,8 @@ function buildTarget() {
 	[ "$CFG_MKINST_DEBUG_DISABLE_CLAMAV" = "true" ] && TMP_CLAMAV_CONF_ENABLE=false
 	local TMP_OPENDKIM_CONF_ENABLE=true
 	[ "$CFG_MKINST_DEBUG_DISABLE_OPENDKIM" = "true" ] && TMP_OPENDKIM_CONF_ENABLE=false
+
+	cd "$VAR_MYDIR/$CFG_MKINST_PATH_BUILDCTX" || return 1
 
 	docker image build \
 			--build-arg CF_MAILHOSTNAME="$LVAR_MAILHOSTNAME" \
@@ -118,11 +122,15 @@ function buildTarget() {
 			--build-arg CF_OPENDKIM_CONF_DBNAME_AND_DBUSER="$LVAR_OPENDKIM_CONF_DBNAME_AND_DBUSER" \
 			--build-arg CF_OPENDKIM_CONF_DBPASS="$LVAR_OPENDKIM_CONF_DBPASS" \
 			-t "$TMP_DI" \
-			-f Dockerfile.tmp \
+			-f "$TMP_BUILDPATH_FOR_BT/Dockerfile.tmp" \
 			.
 	local TMP_RES=$?
-	rm Dockerfile.tmp
-	rm "modoboa-installer-${CFG_MKINST_MODOBOA_INSTALLER_VERSION}-modified.tgz"
 	[ $TMP_RES -ne 0 ] && echo "$VAR_MYNAME: Error: Failed. Aborting." >/dev/stderr
+
+	rm "$TMP_BUILDPATH_FOR_BT/Dockerfile.tmp"
+	rm "$TMP_BUILDPATH_FOR_BT/modoboa-installer-${CFG_MKINST_MODOBOA_INSTALLER_VERSION}-modified.tgz"
+
+	cd "$VAR_MYDIR" || return 1
+
 	return $TMP_RES
 }

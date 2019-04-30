@@ -1,0 +1,15 @@
+--- automx.py--ORG	2019-04-23 17:18:57.000000000 +0200
++++ automx.py	2019-04-23 17:19:54.000000000 +0200
+@@ -54,8 +54,11 @@
+     def _setup_venv(self):
+         """Prepare a python virtualenv."""
+         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
++        # don't install lxml here since we already installed the binary package via Dockerfile
+         packages = [
+-            "future", "lxml", "ipaddress", "sqlalchemy", "python-memcached",
++            "future",
++            #"lxml",
++            "ipaddress", "sqlalchemy", "python-memcached",
+             "python-dateutil", "configparser"
+         ]
+         if self.dbengine == "postgres":
