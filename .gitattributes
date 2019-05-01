@@ -1,3 +1,7 @@
+build-ctx/files/src-mkinstall/build-ctx/img-b-mariadb/files/lsio-baseimage_ubuntu_bionic/qemu-aarch64-static binary
+build-ctx/files/src-mkinstall/build-ctx/img-b-mariadb/files/lsio-baseimage_ubuntu_bionic/qemu-arm-static binary
+
+
 # Default: normalize CRLF into LF in non-binary files
 # Files identified as binary by Git are not changed
 * crlf=auto

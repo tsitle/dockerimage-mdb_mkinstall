@@ -79,8 +79,14 @@ RUN \
 		&& chmod 640 /root/.bashrc \
 		&& chown root:root /root/.bashrc \
 	# user scripts
-		&& chmod 755 /start.sh /root/sslgen.sh /root/pwgen.sh \
-		&& chown root:root /start.sh /root/sslgen.sh /root/pwgen.sh
+		&& chmod 755 \
+				/start.sh \
+				/root/sslgen.sh \
+				/root/pwgen.sh \
+		&& chown root:root \
+				/start.sh \
+				/root/sslgen.sh \
+				/root/pwgen.sh
 
 EXPOSE 80 443
 

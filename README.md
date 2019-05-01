@@ -31,6 +31,11 @@ Instead, use **mdb-mklive** to generate a Docker Image with your custom settings
 
 In order to use this Docker Image you should also get a copy of the Docker Container Repository **mdb-dc-mkinstall** (see below).
 
+## Supported CPU Architectures
+* amd64/x86_64
+* aarch64/arm64v8/arm64
+* armv7l/arm32v7/armhf
+
 ## Links
 ### GitHub
 - GitHub Repository for Docker Image [mdb-mkinstall](https://github.com/tsitle/dockerimage-mdb_mkinstall)

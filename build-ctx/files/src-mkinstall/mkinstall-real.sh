@@ -224,6 +224,7 @@ if [ "$OPT_CMD" = "build" ]; then
 			}
 		}
 
+		cp "$CFG_MKINST_PATH_BUILDCTX/dot_dockerignore" "$CFG_MKINST_PATH_BUILDCTX/.dockerignore" || exit 1
 		_mkinst_removeBuildTimeContainers
 		mkinst_removeDockerImages "$OPT_CMD_ARG1" || exit 1
 
@@ -232,6 +233,8 @@ if [ "$OPT_CMD" = "build" ]; then
 		mkinst_createDockerNet || exit 1
 		buildTarget
 		VAR_EXITCODE=$?
+
+		rm "$CFG_MKINST_PATH_BUILDCTX/.dockerignore" || exit 1
 	fi
 elif [ "$OPT_CMD" = "run" ]; then
 	[ "$OPT_CMD_ARG1" != "$CFG_MKINST_DOCK_IMG_MARIADB" ] && TMP_SCR="img_default"

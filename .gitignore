@@ -2,6 +2,7 @@
 
 build-ctx/files/src-mkinstall/build-temp/
 build-ctx/files/src-mkinstall/build-output/
+build-ctx/files/src-mkinstall/build-ctx/.dockerignore
 
 
 # =========================

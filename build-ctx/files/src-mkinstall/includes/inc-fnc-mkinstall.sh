@@ -6,19 +6,28 @@
 
 # Outputs CPU architecture string
 #
-# @param string $1 debian_rootfs|debian_dist
+# @param string $1 debian_rootfs|debian_dist|s6_overlay|alpine_dist|qemu
 #
 # @return int EXITCODE
 function mkinst_getCpuArch() {
 	case "$(uname -m)" in
 		x86_64*)
-			echo -n "amd64"
+			if [ "$1" = "qemu" ]; then
+				# NOTE: qemu not available for this CPU architecture
+				echo -n "amd64_bogus"
+			elif [ "$1" = "alpine_dist" ]; then
+				echo -n "x86_64"
+			else
+				echo -n "amd64"
+			fi
 			;;
 		aarch64*)
 			if [ "$1" = "debian_rootfs" ]; then
 				echo -n "arm64v8"
 			elif [ "$1" = "debian_dist" ]; then
 				echo -n "arm64"
+			elif [ "$1" = "s6_overlay" -o "$1" = "alpine_dist" -o "$1" = "qemu" ]; then
+				echo -n "aarch64"
 			else
 				echo "$VAR_MYNAME: Error: invalid arg '$1'" >/dev/stderr
 				return 1
@@ -29,6 +38,10 @@ function mkinst_getCpuArch() {
 				echo -n "arm32v7"
 			elif [ "$1" = "debian_dist" ]; then
 				echo -n "armhf"
+			elif [ "$1" = "s6_overlay" -o "$1" = "qemu" ]; then
+				echo -n "arm"
+			elif [ "$1" = "alpine_dist" ]; then
+				echo -n "armv7"
 			else
 				echo "$VAR_MYNAME: Error: invalid arg '$1'" >/dev/stderr
 				return 1
@@ -305,20 +318,19 @@ function mkinst_removeDockerImages() {
 	local TMP_RM=""
 
 	# add child images
-	if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP6" ]; then
-		TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP6")"
-		if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP5" ]; then
-			TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP5")"
-			if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP4" ]; then
-				TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP4")"
-				if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP3" ]; then
-					TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP3")"
-					if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP2" ]; then
-						TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP2")"
-						if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP1" ]; then
-							TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP1")"
-							if [ "$1" != "$CFG_MKINST_DOCK_IMG_MARIADB" ]; then
-								TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_MARIADB")"
+	if [ "$1" != "$CFG_MKINST_DOCK_IMG_NGINX" -a "$1" != "$CFG_MKINST_DOCK_IMG_MARIADB" ]; then
+		if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP6" ]; then
+			TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP6")"
+			if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP5" ]; then
+				TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP5")"
+				if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP4" ]; then
+					TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP4")"
+					if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP3" ]; then
+						TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP3")"
+						if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP2" ]; then
+							TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP2")"
+							if [ "$1" != "$CFG_MKINST_DOCK_IMG_STEP1" ]; then
+								TMP_RM="$TMP_RM $(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_STEP1")"
 							fi
 						fi
 					fi
@@ -467,17 +479,20 @@ function mkinst_runDockerContainer_daemon_dbServer() {
 	local TMP_DI_MARIADB="$(mkinst_getDockerImageNameAndVersionStringForBuildTarget "$CFG_MKINST_DOCK_IMG_MARIADB")"
 
 	local TMP_MP_BASE="${CF_MKINST_MOUNTPOINTS_BASE_ON_HOST:-$VAR_MYDIR}"
-	echo -e "\n$VAR_MYNAME: Starting DB-Server '$VAR_DB_FNCS_DC_MARIADB' (mpBase='$TMP_MP_BASE')..."
+	echo -e "\n$VAR_MYNAME: Starting DB-Server '$VAR_DB_FNCS_DC_MARIADB' (rootPw='$VAR_DB_FNCS_MARIADB_ROOT_PASS',mpBase='$TMP_MP_BASE')..."
+	local TMP_PORTMAP=""
+	if [ "$OPT_CMD" = "daemon" ]; then
+		TMP_PORTMAP="-p ${CFG_MKINST_MARIADB_SERVER_PORT_ON_HOST}:3306"
+	fi
 	docker run \
 			--rm \
 			-d \
 			--network="$CFG_MKINST_DOCK_NET_NAME" \
 			--name "$VAR_DB_FNCS_DC_MARIADB" \
+			$TMP_PORTMAP \
 			-v "$TMP_MP_BASE/$CFG_MKINST_PATH_BUILDTEMP/$CFG_MKINST_MARIADB_MNTPOINT":/var/lib/mysql:delegated \
 			-e MYSQL_ROOT_PASSWORD="$VAR_DB_FNCS_MARIADB_ROOT_PASS" \
 			"$TMP_DI_MARIADB"
-	# to access the DB-Server from the host add this line to the arguments above:
-	#		-p ${CFG_MKINST_MARIADB_SERVER_PORT_ON_HOST}:3306 \
 }
 
 # @return int EXITCODE

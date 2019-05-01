@@ -23,7 +23,9 @@ function buildTarget() {
 	cd "$CFG_MKINST_PATH_BUILDCTX" || return 1
 
 	docker build \
-			--build-arg CF_CPUARCH_DEB_ROOTFS="$(mkinst_getCpuArch debian_rootfs)" \
+			--build-arg CF_CPUARCH_S6_OVERLAY="$(mkinst_getCpuArch s6_overlay)" \
+			--build-arg CF_CPUARCH_DEB_DIST="$(mkinst_getCpuArch debian_dist)" \
+			--build-arg CF_CPUARCH_QEMU="$(mkinst_getCpuArch qemu)" \
 			-t "$TMP_DI" \
 			-f "$(mkinst_getBuildPathForBuildTarget "$OPT_CMD_ARG1")/Dockerfile" \
 			.
