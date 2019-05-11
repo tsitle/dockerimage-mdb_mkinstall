@@ -74,6 +74,14 @@ RUN \
 		/etc/spamassassin/local.cf
 
 RUN \
+	# disable deep protocol inspection
+	sed -i \
+		-e "s/postscreen_bare_newline_enable = yes/postscreen_bare_newline_enable = no/g" \
+		-e "s/postscreen_non_smtp_command_enable = yes/postscreen_non_smtp_command_enable = no/g" \
+		-e "s/postscreen_pipelining_enable = yes/postscreen_pipelining_enable = no/g" \
+		/etc/postfix/main.cf
+
+RUN \
 	sed -i \
 		-e "s/###MAILHOSTNAME###/$CF_MAILHOSTNAME/g" \
 		-e "s/###MAILDOMAIN###/$CF_MAILDOMAIN/g" \
