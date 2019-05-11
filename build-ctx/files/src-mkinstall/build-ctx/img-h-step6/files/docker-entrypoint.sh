@@ -40,6 +40,7 @@ _dep_setOwnerAndPerms "/etc/ssl/host-certs" root root "755"
 _dep_setOwnerAndPerms "/etc/ssl/host-keys" root ssl-cert "750"
 _dep_setOwnerAndPerms "/etc/radicale/modo_rights" radicale radicale "750"
 _dep_setOwnerAndPerms "/srv/radicale/collections" radicale radicale "750"
+_dep_setOwnerAndPerms "/var/lib/dkim" opendkim opendkim "755"
 
 # ----------------------------------------------------------------------
 # update settings
